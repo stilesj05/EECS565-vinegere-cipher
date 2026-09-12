@@ -1,4 +1,4 @@
-\# Mini Project 1
+Mini Project 1
 
 
 
@@ -6,17 +6,17 @@ This program implements the Vigenere cipher and a brute force password cracker.
 
 
 
-\## Files
+Files
 
 
 
-\- main.cpp - main program
+- main.cpp - main program
 
-\- MP1\_dict.txt - dictionary used for password cracking
+- MP1\_dict.txt - dictionary used for password cracking
 
 
 
-\## How to Run
+ How to Run
 
 
 
