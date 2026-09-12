@@ -72,7 +72,9 @@ string decrypt(string ciphertext, string key) { //decrypts a message using the v
 }
 
 void crackPassword(string ciphertext, int keyLength, int firstWordLength,
-                   const unordered_set<string>& dictionary) { //brute forces every possible key
+                   const unordered_set<string>& dictionary) {
+    auto startTime = chrono::high_resolution_clock::now(); //records when cracking starts
+
     long long totalKeys = 1; //stores the total number of possible keys
 
     for (int i = 0; i < keyLength; i++) { //calculates 26 raised to the key length
@@ -81,44 +83,60 @@ void crackPassword(string ciphertext, int keyLength, int firstWordLength,
 
     cout << "Trying " << totalKeys << " possible keys..." << endl;
 
-    auto startTime = chrono::high_resolution_clock::now(); //records when cracking starts
+    unordered_set<string> prefixes; //stores valid beginnings of dictionary words
+
+    for (const string& word : dictionary) { //goes through every dictionary word
+        if (word.length() == firstWordLength) { //only uses words with the correct length
+            for (int i = 1; i <= firstWordLength; i++) { //creates every prefix of the word
+                prefixes.insert(word.substr(0, i)); //adds the prefix to the set
+            }
+        }
+    }
+
+    string key(keyLength, 'A'); //starts with the first possible key
 
     for (long long keyNumber = 0; keyNumber < totalKeys; keyNumber++) { //tries every possible key
-        long long number = keyNumber; //temporary number used to create the key
-        string key(keyLength, 'A'); //starts the key with all A's
+        string firstWord = ""; //stores the decrypted first word
+        bool possibleWord = true; //keeps track of whether the word could still be valid
 
-        for (int i = keyLength - 1; i >= 0; i--) { //builds the key from right to left
-            key[i] = 'A' + (number % 26); //converts the current value into a letter
-            number /= 26; //moves to the next letter
-        }
-
-        string firstWord = ""; //stores only the decrypted first word
-
-        for (int i = 0; i < firstWordLength; i++) { //decrypts only the first word
+        for (int i = 0; i < firstWordLength; i++) { //decrypts the first word one letter at a time
             int ciphertextValue = ciphertext[i] - 'A'; //converts ciphertext letter to a number
             int keyValue = key[i % keyLength] - 'A'; //gets the matching key letter
             int decryptedValue = (ciphertextValue - keyValue + 26) % 26; //decrypts the letter
 
             firstWord += decryptedValue + 'A'; //adds the decrypted letter to the first word
+
+            if (prefixes.find(firstWord) == prefixes.end()) { //checks whether this can still be a dictionary word
+                possibleWord = false; //marks the word as impossible
+                break; //stops decrypting this word early
+            }
         }
 
-        if (dictionary.find(firstWord) != dictionary.end()) { //checks if the first word is in the dictionary
-            string plaintext = decrypt(ciphertext, key); //decrypts the whole message only if the first word matches
+        if (possibleWord && dictionary.find(firstWord) != dictionary.end()) { //checks complete dictionary match
+            string plaintext = decrypt(ciphertext, key); //decrypts the full message
 
             cout << "Possible match:" << endl;
             cout << "Key: " << key << endl;
             cout << "Plaintext: " << plaintext << endl;
             cout << endl;
         }
+
+        for (int i = keyLength - 1; i >= 0; i--) { //moves to the next key
+            if (key[i] < 'Z') { //checks whether this letter can increase
+                key[i]++; //moves the letter forward by one
+                break; //the next key is ready
+            } else {
+                key[i] = 'A'; //rolls Z back over to A
+            }
+        }
     }
 
     auto endTime = chrono::high_resolution_clock::now(); //records when cracking ends
 
-    chrono::duration<double> elapsedTime = endTime - startTime; //calculates the total cracking time
+    chrono::duration<double> elapsedTime = endTime - startTime; //calculates total cracking time
 
-    cout << "Time: " << elapsedTime.count() << " seconds" << endl; //prints the cracking time
+    cout << "Time: " << elapsedTime.count() << " seconds" << endl; //prints cracking time
 }
-
 int main() { //main function where the program starts
     unordered_set<string> dictionary = loadDictionary("MP1_dict.txt"); //loads the dictionary
 
